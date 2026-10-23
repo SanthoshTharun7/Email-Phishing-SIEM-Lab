@@ -261,7 +261,7 @@ phish-lab/
 
 ---
 
-## 🚀 Key Takeaways for SOC Operations
+## Key Takeaways
 
 1. **Authentication $\neq$ Benignity:** SPF, DKIM, and DMARC passes prove sender identity, not intent. Attackers routinely abuse legitimate email providers (Gmail, Microsoft 365 tenants) to bypass perimeter filters.
 2. **Multi-Vector Defense:** Defeating modern phishing requires defense-in-depth: Secure Email Gateways for header anomalies, deep archive parsers for header padding evasion, and endpoint/proxy SIEM correlation for callback containment.
