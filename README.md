@@ -1,17 +1,17 @@
 # Phishing Triage & SIEM Detection Engineering Lab
 
-A hands-on, end-to-end security operations lab covering threat intelligence ingestion, deep email header & attachment forensics, defense evasion discovery, and custom detection rule engineering in Wazuh SIEM.
+A hands-on security operations lab covering threat intelligence ingestion, deep email header & attachment forensics, defense evasion discovery, and custom detection rule engineering in Wazuh SIEM.
 
 ---
 
 ## 📌 Executive Overview
 
-Modern phishing attacks routinely bypass perimeter Secure Email Gateways (SEGs) through sophisticated evasion techniques—ranging from image-rendered lures and zero-width Unicode homoglyphs to abusing trusted cloud infrastructure (Azure, Vercel). 
+Modern phishing attacks routinely bypass perimeter Secure Email Gateways (SEGs) through heuristic and optical evasion techniques—ranging from image-rendered lures and zero-width Unicode homoglyphs to abusing trusted cloud infrastructure (Azure, Vercel). 
 
-This project simulates the complete real-world workflow of a **Security Operations Center (SOC) Analyst**:
-1. **Threat Ingestion:** Safely harvesting live threat feeds (OpenPhish) and an active email spam corpus.
-2. **Forensic Analysis:** Extracting and analyzing MIME headers, authentication mechanics (SPF/DKIM/DMARC), dynamic URL redirect hops, and weaponized attachments.
-3. **Defense Evasion Discovery:** Documenting real-world bypasses (rasterized image text blinding OCR, and ZIP header padding breaking automated AV parsers).
+This project simulates the end-to-end workflow of a **Security Operations Center (SOC) Analyst**:
+1. **Threat Ingestion:** Safely harvesting live threat feeds (OpenPhish) and an active email corpus.
+2. **Forensic Analysis:** Extracting and analyzing MIME headers, authentication mechanics (SPF/DKIM/DMARC), dynamic URL redirect hops, and suspicious attachments.
+3. **Defense Evasion Discovery:** Documenting real-world bypasses (rasterized image text blinding OCR scanners, and ZIP header padding breaking automated AV parsers).
 4. **Threat Intelligence Curation:** Building a standardized, defanged Indicator of Compromise (IOC) dataset mapped to the **MITRE ATT&CK Framework**.
 5. **Detection Engineering:** Operationalizing curated IOCs inside **Wazuh SIEM** using custom decoders, key-value CDB threat lists, and automated correlation rules, verified via `wazuh-logtest`.
 
@@ -34,7 +34,7 @@ This project simulates the complete real-world workflow of a **Security Operatio
        │            ──► Custom XML Decoder (Extracts srcip, domain)
        │            ──► Binary CDB Threat List Lookup (phishing-iocs.cdb)
        ▼
-[ Security Alert ]  ──► Rule 100200 Fired (Level 12 - Critical)
+[ Security Alert ]  ──► Rule 100200 Fired (Level 12 - High/Critical)
 ```
 
 ---
@@ -55,9 +55,9 @@ This project simulates the complete real-world workflow of a **Security Operatio
 </p>
 
 <p align="center">
-  <img src="notes/docx_images/media/imagec.png" alt="PDF Image Object and Hidden URI" width="800"/>
+  <img src="notes/docx_images/media/imagec.png" alt="PDF Image Object and Hidden URI" width="850"/>
   <br>
-  <em>Figure 2: Forensic object stream extraction revealing the hidden Azure Static Web App link.</em>
+  <em>Figure 2: Forensic object stream extraction revealing the single bitmap object (ID 4 0) and the hidden Azure Static Web App link.</em>
 </p>
 
 ---
@@ -65,23 +65,30 @@ This project simulates the complete real-world workflow of a **Security Operatio
 ### 2. Sample 10017: Unicode Homoglyphs & ZIP Header Padding
 * **Lure:** Kraken Security account settings alert.
 * **Header Evasion:** Injected non-printable zero-width Unicode characters and Cyrillic homoglyphs (`а`, `е`) into the display name and subject line to evade regex keyword detection.
-* **Payload Evasion:** Attached Word document (`Regulation Wed, July 08, 2026.docx`) contained 6 prepended junk bytes and corrupted local header offsets. Strict AV unpackers abort scanning upon offset errors, while Microsoft Word's lenient parser ignores padding and opens the file.
+* **Payload Evasion:** Attached Word document (`Regulation Wed, July 08, 2026.docx`) acted as an evasive decoy containing 6 prepended junk bytes and corrupted local header offsets. Strict AV unpackers abort scanning upon offset errors, while Microsoft Word's lenient parser ignores padding and opens the file.
 
 <p align="center">
-  <img src="notes/docx_images/media/image9.png" alt="ZIP Header Offset Evasion" width="800"/>
+  <img src="notes/docx_images/media/image9.png" alt="ZIP Header Offset Evasion" width="850"/>
   <br>
   <em>Figure 3: Unzip warning showing offset compensation and padding bytes used to evade automated antivirus gateways.</em>
 </p>
 
 ---
 
-### 3. Sample 1001: Microsoft Account Spoofing
+### 3. Sample 1001: Microsoft Account Spoofing & Domain Teardown
 * **Lure:** Urgent notice of unusual sign-in activity.
 * **Header Anomaly:** Total mismatch across routing vectors:
   * Header From: `no-reply@access-accsecurity[.]com` (lookalike)
   * Return-Path: `bounce@nonkfrgr[.]co[.]uk`
   * Reply-To: `solutionteamrecognizd02@gmail[.]com` (attacker collection box)
   * Authentication: SPF `none`, DKIM `none`, DMARC `permerror`.
+* **Infrastructure Teardown:** DNS lookup verified `thebandalisty[.]com` returned NXDOMAIN (suspended/offline), while related tracking domain `vigit88[.]com` was actively resolving to IP `172.232.128.247`.
+
+<p align="center">
+  <img src="notes/docx_images/media/image8.png" alt="DNS Resolution Verification" width="850"/>
+  <br>
+  <em>Figure 4: DNS query proving registrar termination of thebandalisty.com vs. active resolution of vigit88.com.</em>
+</p>
 
 ---
 
@@ -93,9 +100,9 @@ This project simulates the complete real-world workflow of a **Security Operatio
 * **Finding:** All 3 active endpoints resolve to the identical backend hosting IP (`185.60.251.252`), demonstrating shared infrastructure across distributed lures.
 
 <p align="center">
-  <img src="notes/docx_images/media/imagea.png" alt="Live OpenPhish URL Traces" width="800"/>
+  <img src="notes/docx_images/media/imagea.png" alt="Live OpenPhish URL Traces" width="850"/>
   <br>
-  <em>Figure 4: Automated sandbox curl triage tracking live HTTP status codes, redirects, and resolved backend IPs.</em>
+  <em>Figure 5: Automated sandbox curl triage tracking live HTTP status codes, redirects, and resolved backend IPs.</em>
 </p>
 
 ---
@@ -104,7 +111,7 @@ This project simulates the complete real-world workflow of a **Security Operatio
 
 | Tactic | Technique ID | Technique Name | Context in Lab |
 | :--- | :--- | :--- | :--- |
-| **Initial Access** | **T1566.001** | Spearphishing Attachment | Delivery of weaponized PDF and DOCX files |
+| **Initial Access** | **T1566.001** | Spearphishing Attachment | Delivery of PDF and decoy DOCX files |
 | **Initial Access** | **T1566.002** | Spearphishing Link | Phishing URLs delivering credential-harvesting pages |
 | **Defense Evasion**| **T1027** | Obfuscated/Encrypted Info | Zero-width Unicode homoglyphs, malformed ZIP headers, rasterized PDF text |
 | **Defense Evasion**| **T1036.005** | Masquerading: Match Name | Impersonating Microsoft, Kraken Security, and Banco do Brasil |
@@ -199,6 +206,7 @@ phish-lab/
 ├── .gitignore                     # Prevents accidental commit of live malware
 ├── notes/
 │   ├── iocs.csv                   # Unified, defanged indicator of compromise table
+│   ├── decoder_architecture_explained.txt # Deep dive guide into SIEM decoder trees
 │   └── docx_images/media/         # 14 evidence screenshots and extracted lures
 ├── reports/
 │   ├── report-sample-1000.md      # Incident report: Banco do Brasil (PDF image lure & Azure abuse)
