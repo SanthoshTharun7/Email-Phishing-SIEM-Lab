@@ -1,0 +1,11 @@
+<group name="web,proxy,phishing,">
+  <rule id="100200" level="12">
+    <decoded_as>custom_proxy</decoded_as>
+    <list field="domain" lookup="match_key">etc/lists/phishing-iocs</list>
+    <description>Outbound connection to known phishing domain ($(domain)) detected</description>
+    <mitre>
+      <id>T1566.002</id>
+      <id>T1204.001</id>
+    </mitre>
+  </rule>
+</group>

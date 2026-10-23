@@ -1,0 +1,5 @@
+<decoder name="custom_proxy">
+  <program_name>proxy</program_name>
+  <regex>src=(\S+)\s+domain=(\S+)</regex>
+  <order>srcip, domain</order>
+</decoder>

@@ -1,0 +1,12 @@
+--- Target: hxxps://system-update-account-ilpro[.]vercel[.]app/account-center-support ---
+final=hxxps://system-update-account-ilpro.vercel.app/account-center-support | code=200 | redirects=0 | ip=64.29.17.131
+--- Target: hxxps://www[.]roblox[.]com[.]et/users/1654175985/profile ---
+final=hxxps://www.roblox.com.et/users/1654175985/profile | code=000 | redirects=0 | ip=202.170.75.201
+--- Target: hxxp://bc23[.]primus[.]rcassocies[.]com/W_PRIMUS_WINE_PROD/SignIn?ReturnUrl=%2FW_PRIMUS_WINE_PROD%2F ---
+final=hxxp://bc23.primus.rcassocies.com/W_PRIMUS_WINE_PROD/SignIn?ReturnUrl=%2FW_PRIMUS_WINE_PROD%2F | code=403 | redirects=0 | ip=45.85.135.115
+--- Target: hxxp://accueilboitear24seconnecte77[.]jimdofree[.]com/ ---
+final=hxxps://accueilboitear24seconnecte77.jimdofree.com/ | code=200 | redirects=1 | ip=185.60.251.252
+--- Target: hxxps://accueilsurlespacear24-8744[.]jimdofree[.]com/ ---
+final=hxxps://accueilsurlespacear24-8744.jimdofree.com/ | code=200 | redirects=0 | ip=185.60.251.252
+--- Target: hxxp://webnailar24[.]jimdofree[.]com/ ---
+final=hxxps://webnailar24.jimdofree.com/ | code=200 | redirects=1 | ip=185.60.251.252

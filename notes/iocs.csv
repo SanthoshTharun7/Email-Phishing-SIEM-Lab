@@ -1,0 +1,8 @@
+10017,domain,202330648[.]dptinfoalma[.]ca,phishing_pot/sample-10017.eml,Attacker subdomain with passing SPF/DKIM
+10017,domain,dptinfoalma[.]ca,phishing_pot/sample-10017.eml,Parent apex domain of attacker infrastructure
+10017,email,kb@202330648[.]dptinfoalma[.]ca,phishing_pot/sample-10017.eml,Attacker sender email address
+10017,ip,209[.]85[.]221[.]53,phishing_pot/sample-10017.eml,Originating relay IP from headers
+10017,hash_sha256,c8aae837a7f4577ceb797e5966df344ba8f3f01f07d393ca1c7eec73b18213e9,phishing_pot/sample-10017.eml,Weaponized DOCX payload hash
+10017,filename,"Regulation Wed, July 08, 2026.docx",phishing_pot/sample-10017.eml,DOCX file with padded ZIP headers
+10017,filename,"E-Statement Wed, July 08, 2026",phishing_pot/sample-10017.eml,0-byte attachment anomaly
+10017,filename,"Privacy & Policy Wed, July 08, 2026",phishing_pot/sample-10017.eml,0-byte attachment anomaly

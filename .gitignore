@@ -1,0 +1,17 @@
+# Ignore live malware samples and raw binaries
+samples/attachments/*.bin
+samples/attachments/*.docx
+samples/attachments/*.pdf
+/tmp/
+
+# Ignore raw cloned repositories of 10,000 live phishing emails
+samples/phishing_pot/
+
+# Ignore raw live URLs file
+notes/links_raw.txt
+
+# Preserve notes, defanged IOCs, reports, wazuh configs, and images
+!notes/iocs.csv
+!notes/docx_images/
+!reports/*.md
+!wazuh/

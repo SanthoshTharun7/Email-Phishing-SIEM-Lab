@@ -1,0 +1,88 @@
+================================================================================
+WAZUH DETECTION ENGINE TEST RESULTS (wazuh-logtest)
+================================================================================
+Manager Version: 4.9.0
+Test Date: 2026-10-23
+Rule ID: 100200 (Level 12 - Critical)
+CDB List: etc/lists/phishing-iocs
+
+--------------------------------------------------------------------------------
+TEST CASE 1: Live Phishing Domain (Jimdo Webmail Campaign)
+--------------------------------------------------------------------------------
+Log:
+Oct 23 10:15:01 proxy01 proxy: src=10.0.0.5 domain=webmailar24.jimdofree.com
+
+Result:
+**Phase 1: Completed pre-decoding.
+	full event: 'Oct 23 10:15:01 proxy01 proxy: src=10.0.0.5 domain=webmailar24.jimdofree.com'
+	timestamp: 'Oct 23 10:15:01'
+	hostname: 'proxy01'
+	program_name: 'proxy'
+
+**Phase 2: Completed decoding.
+	name: 'custom_proxy'
+	domain: 'webmailar24.jimdofree.com'
+	srcip: '10.0.0.5'
+
+**Phase 3: Completed filtering (rules).
+	id: '100200'
+	level: '12'
+	description: 'Outbound connection to known phishing domain (webmailar24.jimdofree.com) detected'
+	groups: '['web', 'proxy', 'phishing']'
+	firedtimes: '1'
+	mail: 'True'
+	mitre.id: '['T1566.002', 'T1204.001']'
+	mitre.tactic: '['Initial Access', 'Execution']'
+	mitre.technique: '['Spearphishing Link', 'Malicious Link']'
+**Alert to be generated.
+
+--------------------------------------------------------------------------------
+TEST CASE 2: Extracted PDF Payload Link (Azure Storage Abuse - Sample 1000)
+--------------------------------------------------------------------------------
+Log:
+Oct 23 10:15:01 proxy01 proxy: src=10.0.0.12 domain=okokoaksoa.z13.web.core.windows.net
+
+Result:
+**Phase 1: Completed pre-decoding.
+	full event: 'Oct 23 10:15:01 proxy01 proxy: src=10.0.0.12 domain=okokoaksoa.z13.web.core.windows.net'
+	timestamp: 'Oct 23 10:15:01'
+	hostname: 'proxy01'
+	program_name: 'proxy'
+
+**Phase 2: Completed decoding.
+	name: 'custom_proxy'
+	domain: 'okokoaksoa.z13.web.core.windows.net'
+	srcip: '10.0.0.12'
+
+**Phase 3: Completed filtering (rules).
+	id: '100200'
+	level: '12'
+	description: 'Outbound connection to known phishing domain (okokoaksoa.z13.web.core.windows.net) detected'
+	groups: '['web', 'proxy', 'phishing']'
+	firedtimes: '1'
+	mail: 'True'
+	mitre.id: '['T1566.002', 'T1204.001']'
+	mitre.tactic: '['Initial Access', 'Execution']'
+	mitre.technique: '['Spearphishing Link', 'Malicious Link']'
+**Alert to be generated.
+
+--------------------------------------------------------------------------------
+TEST CASE 3: Benign Web Traffic (False Positive Verification)
+--------------------------------------------------------------------------------
+Log:
+Oct 23 10:15:01 proxy01 proxy: src=10.0.0.50 domain=google.com
+
+Result:
+**Phase 1: Completed pre-decoding.
+	full event: 'Oct 23 10:15:01 proxy01 proxy: src=10.0.0.50 domain=google.com'
+	timestamp: 'Oct 23 10:15:01'
+	hostname: 'proxy01'
+	program_name: 'proxy'
+
+**Phase 2: Completed decoding.
+	name: 'custom_proxy'
+	domain: 'google.com'
+	srcip: '10.0.0.50'
+
+(Rule 100200 does not fire. No alert generated. Zero False Positives).
+================================================================================
