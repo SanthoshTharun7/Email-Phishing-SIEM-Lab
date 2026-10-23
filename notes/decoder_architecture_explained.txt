@@ -1,0 +1,158 @@
+================================================================================
+WAZUH SIEM DECODER ARCHITECTURE & ENGINEERING GUIDE
+================================================================================
+Generated on: 2026-10-24
+Target Audience: SOC Analysts, Detection Engineers, Security Interview Prep
+
+--------------------------------------------------------------------------------
+1. WHAT IS A SIEM DECODER?
+--------------------------------------------------------------------------------
+A Decoder (also called a "Parser" in Splunk or Sentinel) is the SIEM component
+responsible for transforming unstructured, human-readable text logs into
+structured, indexed key-value fields.
+
+Without a decoder:
+  A log is just a raw string of text:
+  "Oct 24 10:15:01 proxy01 proxy: src=10.0.0.5 domain=webmailar24.jimdofree.com"
+
+With a decoder:
+  The SIEM breaks the text into queryable variables:
+  - event.timestamp  = "Oct 24 10:15:01"
+  - event.program    = "proxy"
+  - event.srcip      = "10.0.0.5"
+  - event.domain     = "webmailar24.jimdofree.com"
+
+Once decoded, detection rules can perform boolean logic, thresholding, and
+threat-intelligence CDB lookups against those specific fields.
+
+--------------------------------------------------------------------------------
+2. WHY DO INDIVIDUAL WAZUH DECODERS LOOK SO SMALL?
+--------------------------------------------------------------------------------
+Beginners often ask: "Is a decoder really just 6 lines of XML?"
+
+Yes and no. A single decoder block is small because Wazuh purposefully avoids
+giant, 100-line monolithic regular expressions. Large regexes consume massive
+CPU cycles and cause event-processing bottlenecks when a SIEM ingests 20,000+
+events per second.
+
+Instead, Wazuh uses a **Hierarchical Tree Architecture**:
+  - Parent Decoders
+  - Child Decoders
+  - Sibling Decoders
+
+Wazuh's internal C-based regex engine (`os_regex`) matches fast string prefixes
+first (`prematch`), and only executes deeper regex parsing if the initial
+signature matches.
+
+--------------------------------------------------------------------------------
+3. THE HIERARCHICAL TREE ARCHITECTURE EXPLAINED
+--------------------------------------------------------------------------------
+Consider an enterprise proxy (e.g., Squid, Zscaler, Palo Alto):
+
+                         [ Parent Decoder ]
+                   Matches Program Name: "^squid"
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+  [ Child Decoder 1 ]     [ Child Decoder 2 ]     [ Child Decoder 3 ]
+  Matches HTTP GET/POST   Matches SSL CONNECT     Matches Proxy Errors
+  "TCP_MISS/200"          "TCP_TUNNEL/200"        "ERR_DNS_FAIL"
+        │                       │
+        ▼                       ▼
+  [ Sibling Decoder ]     [ Sibling Decoder ]
+  Extracts query tokens   Extracts TLS ciphers
+
+- Parent Decoder:
+  Filters the entire log stream down to logs originating from that specific
+  daemon or software.
+
+- Child Decoder (`<parent>` tag):
+  Only runs IF the parent matched. It handles a specific flavor or variant of
+  the log format.
+
+- Sibling Decoders (`offset="after_parent"` or `offset="after_regex"`):
+  Extracts secondary fields (like headers, domains, or hashes) further down
+  the log line without re-parsing the beginning of the string.
+
+--------------------------------------------------------------------------------
+4. REAL-WORLD PRODUCTION EXAMPLE: SQUID PROXY DECODER
+--------------------------------------------------------------------------------
+Directly from Wazuh's production ruleset (/var/ossec/ruleset/decoders/0060-squid_decoders.xml):
+
+```xml
+<!-- 1. The Parent: Fast string anchor -->
+<decoder name="squid">
+  <program_name>^squid</program_name>
+</decoder>
+
+<!-- 2. Child: Standard space-delimited access logs -->
+<decoder name="squid-access">
+  <parent>squid</parent>
+  <type>squid</type>
+  <prematch>^\d+.\d+\s+\d+\s+\S+\s+\S+/\d+\s+\d+\s+\S+\s+</prematch>
+  <regex offset="after_parent">^(\d+.\d+)\s+(\d+)\s+(\S+)\s+(\S+)/(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+\S+/(\S+)</regex>
+  <order>extra_data, time, srcip, action, status, extra_data, http_method, url, id, dstip</order>
+</decoder>
+
+<!-- 3. Child: Handles Squid internal daemon error messages -->
+<decoder name="squid-error">
+  <parent>squid</parent>
+  <prematch>^\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d </prematch>
+  <regex offset="after_parent">^\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d ([\w_]+)\|\s+(\.+)$</regex>
+  <order>action, extra_data</order>
+</decoder>
+```
+
+Key Concepts Demonstrated:
+1. `<prematch>`: Evaluates in nanoseconds. If the line does not start with digits
+   and whitespace, Wazuh skips the expensive regex completely.
+2. `offset="after_parent"`: Tells the regex cursor to start after "squid: ",
+   avoiding redundant re-parsing of syslog timestamps and hostnames.
+3. `<order>`: Directly maps regex capture groups `(...)` into indexed database fields.
+
+--------------------------------------------------------------------------------
+5. MODERN LOGGING: REGEX VS. PLUGIN DECODERS (JSON & CEF)
+--------------------------------------------------------------------------------
+Historically, all system logs were unstructured plain text, requiring custom
+regular expressions for every application.
+
+In modern enterprise security (AWS CloudTrail, CrowdStrike, Okta, Suricata,
+Microsoft 365, Zeek), logs are natively structured in JSON or CEF format.
+
+For structured logs, Wazuh uses **Plugin Decoders**:
+
+```xml
+<decoder name="json_corporate_proxy">
+  <program_name>zscaler</program_name>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>
+```
+
+Why is this single 5-line XML block so powerful?
+- The `JSON_Decoder` is a pre-compiled C library.
+- It automatically parses all 50+ key-value pairs inside the JSON payload into
+  Wazuh fields without needing any regular expressions.
+- It dynamically adapts if the vendor adds new fields in future software updates.
+
+--------------------------------------------------------------------------------
+6. HOW TO EXPLAIN DECODERS IN A SOC ANALYST INTERVIEW (SUTHERLAND)
+--------------------------------------------------------------------------------
+Question: "What is a decoder, and how does Wazuh parse logs before triggering rules?"
+
+Model Answer:
+"Log analysis in a SIEM happens in three distinct phases: Pre-decoding, Decoding,
+and Rule Matching.
+
+1. Pre-decoding: The engine extracts standard syslog headers—timestamp,
+   hostname, and program_name.
+2. Decoding: Wazuh uses a hierarchical parent-child decoder tree. The parent
+   matches the program name or log signature using lightweight prematch strings.
+   Then, child decoders execute regular expressions to extract critical forensic
+   tokens—such as source IP, destination port, username, HTTP status, and domain.
+   For modern JSON and CEF logs, plugin decoders parse the entire key-value payload
+   automatically.
+3. Rule Matching: Once the tokens are extracted into structured variables, the
+   correlation engine checks rule criteria—such as verifying if the extracted
+   domain matches a threat intelligence CDB blacklist or if an HTTP status code
+   equals 200—to generate alerts."
+================================================================================
