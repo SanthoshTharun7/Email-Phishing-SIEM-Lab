@@ -1,0 +1,131 @@
+================================================================================
+WAZUH SIEM EMAIL INGESTION, ATTACK SIMULATION, & MITRE MAPPING GUIDE
+File: ~/phish-lab/notes/wazuh_working_for_phishingmail.txt
+Project: Phishing Triage & SIEM Detection Engineering Lab
+================================================================================
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY & TROUBLESHOOTING RESOLUTION
+--------------------------------------------------------------------------------
+Why the Dashboard Initially Showed Only 2 Hits:
+  - In initial tests, the Wazuh Dashboard only displayed Rule 502 ("Wazuh server started").
+  - Root Cause: Wazuh Manager's internal Filebeat agent failed TLS verification 
+    when connecting to the OpenSearch indexer (https://wazuh.indexer:9200) due to 
+    mismatched authority certificates generated during host container recreation.
+  - Resolution: 
+    1. Reconfigured /etc/filebeat/filebeat.yml inside single-node-wazuh.manager-1 
+       to utilize internal administrative credentials and disabled conflicting client-cert checks.
+    2. Added <list>etc/lists/phishing-iocs</list> and <localfile>/var/ossec/logs/proxy.log</localfile> 
+       directly into persistent /wazuh-config-mount/etc/ossec.conf (wazuh_manager.conf).
+    3. Cleared the Filebeat registry bookmark to harvest all unindexed alerts.
+  - Current Status: All 4 true-positive alerts for Rule 100200 (Level 12) are 
+    actively indexed in OpenSearch with MITRE ATT&CK tags and visible on the dashboard.
+
+--------------------------------------------------------------------------------
+2. HOW WAZUH INGESTS EMAIL DATA IN AN ENTERPRISE SOC
+--------------------------------------------------------------------------------
+A common misconception is that a SIEM reads raw .eml or .msg files directly from disk.
+A SIEM is a real-time event and log correlation engine, not an email client. 
+In enterprise environments, Wazuh ingests email threat telemetry via three standard paths:
+
+PATH A: Secure Email Gateway (SEG) Syslog Telemetry
+  - Infrastructure: Proofpoint, Mimecast, Cisco Secure Email (IronPort), FortiMail.
+  - Mechanism: The perimeter gateway inspects inbound SMTP traffic, extracts metadata 
+    and threat indicators, and forwards structured syslog events to Wazuh over UDP/TCP port 514.
+  - Example Gateway Event:
+    Oct 24 02:40:01 seg01 proofpoint: sender=prestonconstance587@gmail.com recipient=victim@corp.com 
+    subject="Documento Importante" attachment_hash=csWuYjyqO2IR url=okokoaksoa.z13.web.core.windows.net action=delivered
+  - Wazuh Role: Wazuh decoders parse sender, recipient, attachment hashes, and embedded URLs, 
+    triggering rules when indicators match threat intelligence lists.
+
+PATH B: Cloud Email APIs (Microsoft 365 / Google Workspace)
+  - Infrastructure: Microsoft Defender for Office 365, Google Workspace Security.
+  - Mechanism: Wazuh pulls audit and telemetry logs using native integration wodles 
+    (<wodle name="azure-logs"> or custom REST API scripts via Microsoft Graph API).
+  - Telemetry Collected:
+    * User Reported Phishing: When an employee clicks "Report Phishing" in Outlook.
+    * MailItemsAccessed: Detects unauthorized inbox compromise.
+    * New-InboxRule: Detects attacker persistence via hidden forwarding rules.
+
+PATH C: On-Premises Mail Server Logs
+  - Infrastructure: Postfix, Sendmail, Exim, or Microsoft Exchange.
+  - Mechanism: A Wazuh agent installed on the mail server monitors log files:
+    * Linux: /var/log/mail.log or /var/log/maillog.
+    * Exchange: Message Tracking Logs (MSGTRK files).
+  - Telemetry Collected: Inbound envelope sender, relay IP, authentication results, 
+    and recipient delivery status.
+
+--------------------------------------------------------------------------------
+3. ATTACK SIMULATION COMPARISON: MATLAB/SCADA VS. PHISHING LAB
+--------------------------------------------------------------------------------
+
+MATLAB / SCADA Project Model:
+  [ Endpoint Attack Simulation ] ──► MATLAB script injects malicious Modbus/SCADA packets
+                                 ──► Host network stack generates raw event logs
+                                 ──► Wazuh agent captures logs and triggers alert.
+
+Phishing Lab Simulation Model (The Multi-Stage Cyber Kill Chain):
+  In email security, the attack does NOT originate as an executable on the host. 
+  It originates as an inbound social-engineering lure, requiring threat triage 
+  before detection rules can even be written:
+
+  [ Stage 1: Threat Intelligence & Forensic Triage ]
+    - Ingest live threat corpus (OpenPhish feed / samples/phishing_pot/).
+    - Forensic deconstruction of raw .eml files (SPF/DKIM/DMARC analysis).
+    - Unpack and neutralize evasion techniques (qpdf stream extraction, 
+      pdfimages rasterized bitmap discovery, DOCX ZIP header padding analysis).
+    - Multi-engine intelligence validation on VirusTotal (Trojan:PDF/Phish!atmn).
+
+  [ Stage 2: Detection Engineering in Wazuh ]
+    - Compile extracted domains into an OSSEC Constant Database (CDB) list:
+      /var/ossec/etc/lists/phishing-iocs
+    - Engineer custom XML decoder (custom_proxy) to parse client IP and visited domain.
+    - Write correlation Rule 100200 with MITRE ATT&CK mapping and Level 12 severity.
+
+  [ Stage 3: The Attack Simulation (Victim Click) ]
+    - Simulation: A victim employee receives the lure and clicks the embedded link.
+    - The outbound request is logged by the web proxy / gateway:
+      "Oct 24 02:53:50 proxy01 proxy: src=10.0.0.99 domain=okokoaksoa.z13.web.core.windows.net"
+
+  [ Stage 4: Real-Time Detection & MITRE Correlation ]
+    - Wazuh analysisd evaluates the proxy log against the compiled CDB list.
+    - Matching domain triggers Rule 100200 in sub-millisecond time.
+    - Filebeat forwards alert JSON to Wazuh Indexer (OpenSearch).
+    - Dashboard renders alert under Security Information Management and MITRE matrix.
+
+--------------------------------------------------------------------------------
+4. MITRE ATT&CK MAPPING DETAILS
+--------------------------------------------------------------------------------
+Rule 100200 maps directly to the following tactics and techniques:
+
+1. Technique: T1566.002 - Phishing: Spearphishing Link
+   - Tactic: TA0001 - Initial Access
+   - Description: Adversaries send spearphishing emails with malicious links to lure 
+     victims into visiting credential harvesting sites or downloading payloads.
+
+2. Technique: T1204.001 - User Execution: Malicious Link
+   - Tactic: TA0002 - Execution
+   - Description: Relying on human interaction to click an embedded URL within 
+     an email lure or PDF document.
+
+3. Technique: T1027 - Obfuscated Files or Information
+   - Tactic: TA0005 - Defense Evasion
+   - Evidenced in Lab: Rasterizing email text into a PNG bitmap (img1000-000.png) 
+     to blind OCR scanners, and padding ZIP local headers (+6 bytes) to crash AV unpackers.
+
+--------------------------------------------------------------------------------
+5. LIVE VERIFICATION & DASHBOARD INSPECTION
+--------------------------------------------------------------------------------
+To query the indexed alerts directly from the command line:
+  docker exec single-node-wazuh.manager-1 curl -k -u admin:SecretPassword \
+    "https://wazuh.indexer:9200/wazuh-alerts-4.x-*/_search?q=rule.id:100200" | jq .
+
+To view the alerts in the Wazuh Web UI (https://localhost):
+  1. Navigate to: Security Information Management ➔ Threat Hunting ➔ Events.
+  2. Filter: rule.id: 100200
+  3. Navigate to: Wazuh Menu (top-left) ➔ MITRE ATT&CK.
+  4. Observe tactics "Initial Access" and "Execution" populated from your lab alerts.
+
+================================================================================
+END OF GUIDE
+================================================================================
