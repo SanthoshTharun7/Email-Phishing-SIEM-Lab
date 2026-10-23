@@ -68,13 +68,13 @@ This project simulates the end-to-end workflow of a **Security Operations Center
 </p>
 
 <p align="center">
-  <img src="notes/docx_images/media/trojanalert.png" alt="VirusTotal Trojan:PDF/Phish!atmn Detection" width="850"/>
+  <img src="notes/virustotal/trojan_alert.png" alt="VirusTotal Trojan:PDF/Phish!atmn Detection" width="850"/>
   <br>
   <em>Figure 3: VirusTotal multi-engine detection panel for 1000_flat.pdf. Microsoft Defender uniquely identifies the file as Trojan:PDF/Phish!atmn (1/62 detection ratio).</em>
 </p>
 
 <p align="center">
-  <img src="notes/docx_images/media/pdfdetails.png" alt="VirusTotal File Metadata and History" width="850"/>
+  <img src="notes/virustotal/pdf_details.png" alt="VirusTotal File Metadata and History" width="850"/>
   <br>
   <em>Figure 4: VirusTotal metadata panel confirming document creation timestamp (July 26, 2023) and SHA-256 hash (7857626ee81ec5fafb579dbf47fecdb92615444ac4d719326e789a37c0af3f0e).</em>
 </p>
@@ -215,34 +215,55 @@ echo "Oct 23 10:15:01 proxy01 proxy: src=10.0.0.5 domain=webmailar24.jimdofree.c
 **False Positive Verification:**
 Testing benign traffic (`domain=google.com`) confirmed the log decodes cleanly while **Rule 100200 does not trigger**, verifying zero false positive noise.
 
+### 5. Live SIEM Dashboard & MITRE ATT&CK Matrix Verification
+
+The detection pipeline was verified live by streaming proxy event streams into `/var/ossec/logs/proxy.log` on a running production-grade Wazuh SIEM stack (`wazuh.manager`, `wazuh.indexer` / OpenSearch, and `wazuh.dashboard`). 
+
+All True-Positive alerts fired at **Level 12 severity**, successfully correlating extracted IOCs in sub-millisecond lookups and populating the live MITRE ATT&CK tactics matrix:
+
+**Figure 8: Live Wazuh SIEM Security Events (Rule 100200 - Level 12 True-Positives)**
+![Wazuh Events Table](notes/wazuh_evidence/wazuh_events_rule100200.png)
+
+**Figure 9: Live Alerts Summary Grouped by Extracted Phishing Domains**
+![Wazuh Alerts Summary](notes/wazuh_evidence/wazuh_alerts_summary.png)
+
+**Figure 10: Real-Time MITRE ATT&CK Tactics & Technique Distribution (`T1566.002` & `T1204.001`)**
+![Wazuh MITRE Dashboard](notes/wazuh_evidence/wazuh_mitre_dashboard.png)
+
+**Figure 11: Wazuh SIEM Executive Overview Dashboard (Level 12 Alert Evolution & Spike Telemetry)**
+![Wazuh Overview Dashboard](notes/wazuh_evidence/wazuh_overview_dashboard.png)
+
 ---
 
 ## 📂 Repository Structure
 
 ```
 phish-lab/
-├── README.md                      # Comprehensive project documentation (with embedded evidence)
-├── .gitignore                     # Prevents accidental commit of live malware
+├── README.md                          # Comprehensive project documentation (with embedded evidence)
+├── .gitignore                         # Prevents accidental commit of live malware
 ├── notes/
-│   ├── iocs.csv                   # Unified, defanged indicator of compromise table
-│   ├── decoder_architecture_explained.txt # Deep dive guide into SIEM decoder trees
-│   ├── analysis.guide.txt         # Phishing triage & log correlation field guide
-│   ├── docx_images/media/         # 14 evidence screenshots and extracted lures
-│   └── virustotal/                # Multi-engine detection scans and metadata
+│   ├── iocs.csv                       # Unified, defanged indicator of compromise table
+│   ├── soc_interview_prep.txt         # SOC analyst campus interview prep & 4 core log scenarios
+│   ├── wazuh_working_for_phishingmail.txt # Wazuh email ingestion architecture & simulation mechanics
+│   ├── decoder_architecture_explained.txt # Deep dive guide into SIEM decoder trees & regex ordering
+│   ├── analysis_guide.txt             # Phishing triage & log correlation field guide
+│   ├── virustotal/                    # Multi-engine detection scans and Trojan metadata
+│   ├── wazuh_evidence/                # Live Wazuh SIEM alerts, events & MITRE dashboard screenshots
+│   └── docx_images/media/             # 14 forensic evidence screenshots and extracted lures
 ├── reports/
-│   ├── report-sample-1000.md      # Incident report: Banco do Brasil (PDF image lure & Azure abuse)
-│   ├── report-sample-1001.md      # Incident report: Microsoft Account (header mismatch & spoofing)
-│   └── report-sample-10017.md     # Incident report: Kraken Security (homoglyphs & ZIP header padding)
+│   ├── report-sample-1000.md          # Incident report: Banco do Brasil (PDF image lure & Azure abuse)
+│   ├── report-sample-1001.md          # Incident report: Microsoft Account (header mismatch & spoofing)
+│   └── report-sample-10017.md         # Incident report: Kraken Security (homoglyphs & ZIP header padding)
 └── wazuh/
-    ├── lists/phishing-iocs        # CDB threat intelligence lookup list
-    ├── decoders/local_decoder.xml # Custom proxy log decoder
-    ├── rules/local_rules.xml      # Detection rule 100200 with MITRE ATT&CK tags
-    └── test_results.txt           # Captured wazuh-logtest verification logs
+    ├── lists/phishing-iocs            # CDB threat intelligence lookup list
+    ├── decoders/local_decoder.xml     # Custom proxy log decoder
+    ├── rules/local_rules.xml          # Detection rule 100200 with MITRE ATT&CK tags
+    └── test_results.txt               # Captured wazuh-logtest verification logs
 ```
 
 ---
 
-## Key Takeaways:
+## 🚀 Key Takeaways for SOC Operations
 
 1. **Authentication $\neq$ Benignity:** SPF, DKIM, and DMARC passes prove sender identity, not intent. Attackers routinely abuse legitimate email providers (Gmail, Microsoft 365 tenants) to bypass perimeter filters.
 2. **Multi-Vector Defense:** Defeating modern phishing requires defense-in-depth: Secure Email Gateways for header anomalies, deep archive parsers for header padding evasion, and endpoint/proxy SIEM correlation for callback containment.
