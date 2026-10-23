@@ -230,8 +230,6 @@ All True-Positive alerts fired at **Level 12 severity**, successfully correlatin
 **Figure 10: Real-Time MITRE ATT&CK Tactics & Technique Distribution (`T1566.002` & `T1204.001`)**
 ![Wazuh MITRE Dashboard](notes/wazuh_evidence/wazuh_mitre_dashboard.png)
 
-**Figure 11: Wazuh SIEM Executive Overview Dashboard (Level 12 Alert Evolution & Spike Telemetry)**
-![Wazuh Overview Dashboard](notes/wazuh_evidence/wazuh_overview_dashboard.png)
 
 ---
 
