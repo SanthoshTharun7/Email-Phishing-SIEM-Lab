@@ -68,13 +68,13 @@ This project simulates the end-to-end workflow of a **Security Operations Center
 </p>
 
 <p align="center">
-  <img src="notes/virustotal/trojanalert.png" alt="VirusTotal Trojan:PDF/Phish!atmn Detection" width="850"/>
+  <img src="notes/docx_images/media/trojanalert.png" alt="VirusTotal Trojan:PDF/Phish!atmn Detection" width="850"/>
   <br>
   <em>Figure 3: VirusTotal multi-engine detection panel for 1000_flat.pdf. Microsoft Defender uniquely identifies the file as Trojan:PDF/Phish!atmn (1/62 detection ratio).</em>
 </p>
 
 <p align="center">
-  <img src="notes/virustotal/pdfdetails.png" alt="VirusTotal File Metadata and History" width="850"/>
+  <img src="notes/docx_images/media/pdfdetails.png" alt="VirusTotal File Metadata and History" width="850"/>
   <br>
   <em>Figure 4: VirusTotal metadata panel confirming document creation timestamp (July 26, 2023) and SHA-256 hash (7857626ee81ec5fafb579dbf47fecdb92615444ac4d719326e789a37c0af3f0e).</em>
 </p>
