@@ -2,7 +2,7 @@
 
 **Analyst:** Sanmaestro  
 **Date:** October 23, 2026  
-**Incident Type:** Spearphishing Attachment with Advanced Defense Evasion  
+**Incident Type:** Defense Evasion via Header Homoglyphs & Malformed Archive Padding  
 **Severity:** HIGH  
 
 ---
@@ -10,7 +10,7 @@
 ## 1. Executive Summary
 A targeted spearphishing email was identified impersonating **Kraken Security Teams** under the subject *"Your Account Sесurіty Sеttіngs Chаngе. Mail#7452764391"*. The threat actor employed multiple layers of defense evasion, including zero-width non-printable characters and Cyrillic homoglyphs in the email headers to bypass regex-based security filters. 
 
-The email delivered a weaponized Microsoft Word attachment (`Regulation Wed, July 08, 2026.docx`) alongside two zero-byte ghost attachments. Low-level archive analysis revealed deliberate ZIP header padding and bad offset anomalies, an evasion technique designed to trigger extraction failures in automated AV/sandbox inspection engines while still allowing Microsoft Word to execute the file.
+The email delivered an evasive Microsoft Word decoy document (`Regulation Wed, July 08, 2026.docx`) alongside two zero-byte ghost attachments. Low-level archive analysis revealed deliberate ZIP header padding and bad offset anomalies, an evasion technique designed to trigger extraction failures in automated AV/sandbox inspection engines while still allowing Microsoft Word to execute the file.
 
 ---
 
@@ -32,16 +32,30 @@ The email delivered a weaponized Microsoft Word attachment (`Regulation Wed, Jul
 ### 2.3 Attachment & Payload Forensics
 * **Primary Payload:** `Regulation Wed, July 08, 2026.docx` (41,883 bytes)
   * **SHA-256:** `c8aae837a7f4577ceb797e5966df344ba8f3f01f07d393ca1c7eec73b18213e9`
-* **Archive Anomaly & Evasion:**  
+
+<p align="center">
+  <img src="../notes/docx_images/media/image7.png" alt="Attachment extraction and file type verification" width="750"/>
+  <br>
+  <em>Figure 1: Programmatic attachment extraction and OOXML package relationship verification.</em>
+</p>
+
+* **Archive Anomaly & AV Evasion:**  
   Running archive inspection revealed:
   ```text
   warning [10017_0.bin]: 6 extra bytes at beginning or within zipfile
   file #1: bad zipfile offset (local header sig): 5878
   ```
   *Analysis:* The attacker prepended junk bytes and corrupted local header offsets. Strict antivirus gateways and perimeter email filters often fail or abort parsing malformed ZIP archives, skipping inspection. However, Microsoft Word's lenient parser ignores leading padding and successfully opens the file.
+
+<p align="center">
+  <img src="../notes/docx_images/media/image9.png" alt="ZIP Header Offset Warning and Decoy Text" width="750"/>
+  <br>
+  <em>Figure 2: Terminal output documenting local header signature offset warnings and benign decoy privacy text.</em>
+</p>
+
 * **Payload Content:**
   * No VBA macros (`vbaProject.bin`) or external HTTP template injection targets were identified.
-  * Internal XML text preview revealed a decoy Privacy Statement (*"PRIVACY POLICY & STATEMENT Phone Number Change..."*) used to create an illusion of legitimacy.
+  * Internal XML text preview revealed a decoy Privacy Statement (*"PRIVACY POLICY & STATEMENT Phone Number Change..."*) used to create an illusion of legitimacy and buy time.
 * **Ghost Attachments:**
   * Two attachments (`E-Statement Wed, July 08, 2026`, `Privacy & Policy Wed, July 08, 2026`) were 0 bytes (SHA-256: `e3b0c442...b855`). These are used as parser-confusion artifacts.
 
