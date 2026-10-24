@@ -1,0 +1,8 @@
+  ### Scenario 1: Quick Rule & Decoder Reload (No Downtime)
+  Use this if you edited local_rules.xml, local_decoder.xml, or updated the phishing-iocs list. You do not need to restart Docker or the Web Dashboard.
+  1. Restart the Wazuh Manager processes:
+    docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart
+
+  2. Check that all manager daemons are running:
+    docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control status
+
