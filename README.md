@@ -1,4 +1,4 @@
-# Phishing Triage & SIEM Detection Engineering Lab
+# Email Phising SIEM Lab
 
 <p align="center">
   <img src="https://img.shields.io/badge/Project-Learning_Lab-blue?style=for-the-badge" alt="Learning Project"/>
