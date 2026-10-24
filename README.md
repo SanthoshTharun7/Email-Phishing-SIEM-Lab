@@ -302,6 +302,22 @@ All True-Positive alerts fired at **Level 12 severity**, achieving sub-milliseco
   <em>Figure 11: Wazuh SIEM Executive Overview Dashboard (Level 12 Alert Evolution & Spike Telemetry).</em>
 </p>
 
+### 5. Live SIEM Dashboard & MITRE ATT&CK Matrix Verification
+
+The detection pipeline was verified live by streaming proxy event streams into `/var/ossec/logs/proxy.log` on a running production-grade Wazuh SIEM stack (`wazuh.manager`, `wazuh.indexer` / OpenSearch, and `wazuh.dashboard`). 
+
+All True-Positive alerts fired at **Level 12 severity**, successfully correlating extracted IOCs in sub-millisecond lookups and populating the live MITRE ATT&CK tactics matrix:
+
+**Figure 8: Live Wazuh SIEM Security Events (Rule 100200 - Level 12 True-Positives)**
+![Wazuh Events Table](notes/docx_images/media/wazuh_events_rule100200.png)
+
+**Figure 9: Live Alerts Summary Grouped by Extracted Phishing Domains**
+![Wazuh Alerts Summary](notes/docx_images/media/wazuh_alerts_summary.png)
+
+**Figure 10: Real-Time MITRE ATT&CK Tactics & Technique Distribution (`T1566.002` & `T1204.001`)**
+![Wazuh MITRE Dashboard](notes/docx_images/media/wazuh_mitre_dashboard.png)
+
+
 ---
 
 ## <a id="repo-structure"></a>📂 Repository Structure
